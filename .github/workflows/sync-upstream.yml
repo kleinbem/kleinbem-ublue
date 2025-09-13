@@ -1,0 +1,79 @@
+name: Sync upstream (image-template)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "12 4 * * 0"   # Weekly on Sunday at 04:12 Europe/Dublin
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://github.com/ublue-os/image-template.git || true
+          git fetch upstream --prune
+          git fetch origin --prune
+
+      - name: Prepare merge from upstream/main (no commit)
+        env:
+          BASE_BRANCH: main
+        run: |
+          set -euo pipefail
+          git checkout -B "$BASE_BRANCH" "origin/$BASE_BRANCH"
+          git merge --no-ff --no-commit upstream/main || {
+            echo "::error::Merge conflicts detected. Please resolve manually."
+            exit 1
+          }
+
+      - name: Detect changes and decide to PR
+        id: detect
+        run: |
+          if git diff --quiet --staged && git diff --quiet; then
+            echo "No changes from upstream."
+            git merge --abort || true
+            echo "create_pr=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "create_pr=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create/Update pull request
+        if: steps.detect.outputs.create_pr == 'true'
+        id: cpr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          title: "Sync: ublue-os/image-template → main"
+          body: |
+            Automated sync from `ublue-os/image-template@main`.
+            This PR will be auto-merged with **squash** once all checks pass.
+          commit-message: "Merge upstream main from ublue-os/image-template"
+          branch: sync/upstream
+          base: main
+          labels: sync, automated
+          delete-branch: false
+
+      - name: Enable auto-merge (squash)
+        if: steps.detect.outputs.create_pr == 'true' && steps.cpr.outputs.pull-request-number
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+          merge-method: squash

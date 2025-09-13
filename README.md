@@ -1,3 +1,15 @@
+# kleinbem-ublue
+
+[![📈 View GHCR Stats](https://img.shields.io/badge/Stats-GHCR%20Pulls%20&%20History-blue)](https://kleinbem.github.io/kleinbem-ublue/)
+
+[![Sync upstream workflow](https://github.com/kleinbem/kleinbem-ublue/actions/workflows/sync-upstream.yml/badge.svg)](https://github.com/kleinbem/kleinbem-ublue/actions/workflows/sync-upstream.yml)
+![Last Sync](https://img.shields.io/github/last-commit/kleinbem/kleinbem-ublue/main?label=Last%20Sync&color=blue)
+[![Container Build](https://github.com/kleinbem/kleinbem-ublue/actions/workflows/build.yml/badge.svg)](https://github.com/kleinbem/kleinbem-ublue/actions/workflows/build.yml)
+[![Container Version](https://img.shields.io/badge/dynamic/json?color=blue&label=Version&query=$.tags[0]&url=https://ghcr.io/v2/kleinbem/kleinbem-ublue/tags/list)](https://github.com/kleinbem/kleinbem-ublue/pkgs/container/kleinbem-ublue)
+[![GHCR Pulls](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/kleinbem/kleinbem-ublue/main/.github/badges/ghcr_pulls.json)](https://github.com/kleinbem/kleinbem-ublue/pkgs/container/kleinbem-ublue)
+
+Universal Blue image based on [ublue-os/image-template](https://github.com/ublue-os/image-template).
+
 # image-template
 
 # Purpose

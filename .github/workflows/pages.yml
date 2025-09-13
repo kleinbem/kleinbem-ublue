@@ -1,0 +1,91 @@
+      - name: Build styled HTML
+        run: |
+          mkdir public
+          python - <<'PY'
+          import pandas as pd
+
+          df = pd.read_csv(".github/stats/ghcr_pulls.csv", names=["Date", "Total Pulls"])
+          df = df.sort_values("Date")
+          df["Daily Pulls"] = df["Total Pulls"].diff().fillna(0).astype(int)
+
+          # Table HTML
+          table_html = df.to_html(index=False, classes="stats-table", border=0)
+
+          html = f"""
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>GHCR Pull Stats</title>
+            <style>
+              body {{
+                font-family: Arial, sans-serif;
+                margin: 20px;
+                background: #f8f9fa;
+                color: #333;
+                line-height: 1.6;
+              }}
+              h1, h2 {{
+                text-align: center;
+              }}
+              img {{
+                display: block;
+                margin: 0 auto 20px auto;
+                max-width: 100%;
+              }}
+              table.stats-table {{
+                border-collapse: collapse;
+                margin: 0 auto;
+                width: 95%;
+                background: white;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+              }}
+              table.stats-table th, table.stats-table td {{
+                border: 1px solid #ddd;
+                padding: 8px 12px;
+                text-align: center;
+              }}
+              table.stats-table th {{
+                background: #007BFF;
+                color: white;
+                cursor: pointer;
+              }}
+              table.stats-table tr:nth-child(even) {{
+                background: #f2f2f2;
+              }}
+              table.stats-table tr:hover {{
+                background: #e9f5ff;
+              }}
+            </style>
+            <script>
+              document.addEventListener('DOMContentLoaded', () => {{
+                document.querySelectorAll('th').forEach((th, idx) => {{
+                  th.addEventListener('click', () => {{
+                    const table = th.closest('table');
+                    const rows = Array.from(table.querySelectorAll('tr:nth-child(n+2)'));
+                    const asc = th.classList.toggle('asc');
+                    rows.sort((a, b) => {{
+                      const A = a.children[idx].innerText;
+                      const B = b.children[idx].innerText;
+                      return asc ? A.localeCompare(B, undefined, {{numeric: true}}) : B.localeCompare(A, undefined, {{numeric: true}});
+                    }});
+                    rows.forEach(r => table.appendChild(r));
+                  }});
+                }});
+              }});
+            </script>
+          </head>
+          <body>
+            <h1>GHCR Pull Stats</h1>
+            <img src="ghcr_pulls_chart.svg" alt="GHCR Pulls Chart">
+            <h2>Pull History</h2>
+            {table_html}
+          </body>
+          </html>
+          """
+
+          with open("public/index.html", "w") as f:
+              f.write(html)
+          PY
+
+          cp .github/badges/ghcr_pulls_chart.svg public/

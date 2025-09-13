@@ -1,0 +1,44 @@
+name: GHCR Download Stats
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # Update daily at 06:00 UTC
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["build.yml"]   # Trigger after build.yml completes
+    types:
+      - completed
+
+jobs:
+  update-stats:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get GHCR download stats
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          IMAGE="kleinbem-ublue"
+          ORG="kleinbem"
+          URL="https://api.github.com/users/${ORG}/packages/container/${IMAGE}/versions"
+
+          # Get total pull count
+          TOTAL=$(curl -s -H "Authorization: Bearer $GH_TOKEN" "$URL" \
+            | jq '[.[].metadata.container.download_count] | add')
+
+          echo "{\"schemaVersion\": 1, \"label\": \"GHCR Pulls\", \"message\": \"${TOTAL}\", \"color\": \"green\"}" > ghcr_pulls.json
+
+      - name: Save badge JSON
+        run: |
+          mkdir -p .github/badges
+          mv ghcr_pulls.json .github/badges/ghcr_pulls.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/badges/ghcr_pulls.json
+          git commit -m "Update GHCR pulls badge" || echo "No changes to commit"
+          git push origin main
