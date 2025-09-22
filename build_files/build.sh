@@ -27,7 +27,7 @@ systemctl enable podman.socket
 ### my changes
 
 # Enable Google Chrome repo
-dnf5 repo --enable google-chrome
+sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/google-chrome.repo
 
 
 #todo:
