@@ -27,7 +27,7 @@ systemctl enable podman.socket
 ### my changes
 
 # Enable Google Chrome repo
-dnf5 config-manager --enable google-chrome
+dnf5 repo --enable google-chrome
 
 
 #todo:
