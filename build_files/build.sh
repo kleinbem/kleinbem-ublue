@@ -26,11 +26,8 @@ systemctl enable podman.socket
 
 ### my changes
 
-# Ensure Fedora's third-party repositories are available
-dnf5 install fedora-workstation-repositories
-
 # Enable Google Chrome repo
-dnf5 config-manager --set-enabled google-chrome
+dnf5 config-manager --enable google-chrome
 
 
 #todo:
