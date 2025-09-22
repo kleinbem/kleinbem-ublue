@@ -23,7 +23,7 @@ sed -i -e '$apriority=99' /etc/yum.repos.d/rpmfusion-*.repo
 ## -- PACKAGE INSTALLATION -- ##
 
 # Manually create the directory for Google Chrome before installation
-mkdir -p /opt/google/chrome-beta
+mkdir -p /var/opt/google/chrome-beta
 
 # Define lists of packages to install
 # This makes it easy to manage and see what's being added.
