@@ -29,7 +29,7 @@ base_packages=(
 )
 
 utility_packages=(
-  "scrcpy"
+  ""
 )
 
 # Combine all package lists into one
@@ -47,7 +47,7 @@ dnf5 install -y ${packages_to_install[@]}
 
 # High-priority candidates:
 # Podman Desktop, Cockpit Client, GNOME Builder, Arduino IDE,
-# Sysd Manager, DevToolbox
+# Sysd Manager, DevToolbox, ... scrcpy
 
 # Lower-priority candidates (depends on workflow):
 # Geany, DBeaver, GitKraken, LACT, Solaar
