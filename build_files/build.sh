@@ -22,3 +22,47 @@ dnf5 install -y tmux
 #### Example for enabling a System Unit File
 
 systemctl enable podman.socket
+
+
+### my changes
+
+# Ensure Fedora's third-party repositories are available
+dnf5 install fedora-workstation-repositories
+
+# Enable Google Chrome repo
+dnf5 config-manager --set-enabled google-chrome
+
+
+#todo:
+# - move to base image
+#Podman Desktop (io.podman_desktop.PodmanDesktop)
+#Cockpit Client (org.cockpit_project.CockpitClient)
+#GNOME Builder (org.gnome.Builder)
+#Arduino IDE (cc.arduino.IDE2)
+#Sysd Manager (io.github.plrigaux.sysd-manager)
+#DevToolbox (me.iepure.devtoolbox)
+# - maybe move to base image
+#Geany (org.geany.Geany)
+#DBeaver (io.dbeaver.DBeaverCommunity)
+#GitKraken (com.axosoft.GitKraken)
+#LACT (io.github.ilya_zlobintsev.LACT)
+#Solaar (io.github.pwr_solaar.solaar)
+
+# Packages
+
+base_packages=(
+  "google-chrome-beta"
+)
+
+utility_packages=(
+  "scrcpy"
+)
+
+packages=(
+  ${base_packages[@]}
+  ${utility_packages[@]}
+)
+
+# install rpms
+dnf5 install -y ${packages[@]}
+
