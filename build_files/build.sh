@@ -3,6 +3,24 @@
 # This script is designed to be idempotent and can be run safely multiple times.
 set -ouex pipefail
 
+EMPTY_DIRS=(/opt /srv /home /usr/local)
+
+check_empty() {
+  local d rc=0
+  for d in "$@"; do
+    if [[ -d $d && -z $(find "$d" -mindepth 1 -print -quit 2>/dev/null) ]]; then
+      echo "$d: empty"
+    else
+      echo "$d: not empty"
+      tree "$d"
+      rc=1
+    fi
+  done
+  return $rc
+}
+
+check_empty "${EMPTY_DIRS[@]}"
+
 ## -- SYSTEM CONFIGURATION -- ##
 
 # Enable podman socket for running rootless containers
@@ -49,7 +67,8 @@ dnf5 install -y ${packages_to_install[@]}
 mv /opt/google/chrome-beta /usr/lib/google-chrome-beta && \
     ln -sf /usr/lib/google-chrome-beta/google-chrome-beta /usr/bin/google-chrome-beta
 
-tree /opt
+
+check_empty "${EMPTY_DIRS[@]}"
 
 ## -- TODO for your base image -- ##
 # The following are your notes on packages to consider moving into your
