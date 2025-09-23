@@ -6,13 +6,9 @@ set -ouex pipefail
 EMPTY_DIRS=(/opt /srv /home /usr/local)
 
 check_empty() {
-  local d rc=0
-  for d in "$@"; do
-    if [[ ! -e $d ]]; then
-      echo "$d: does not exist (treated as empty)"
-    elif [[ -d $d && -z $(find "$d" -mindepth 1 -print -quit 2>/dev/null) ]]; then
-      echo "$d: empty"
-    else
+  local d rc=0 args=("$@"); [[ ${#args[@]} -gt 0 ]] || args=("${EMPTY_DIRS[@]}")
+  for d in "${args[@]}"; do
+    if [[ -d $d && -n $(find "$d" -mindepth 1 -print -quit 2>/dev/null) ]]; then
       echo "$d: not empty"
       ls -A "$d" 2>/dev/null || true
       rc=1
@@ -82,3 +78,10 @@ check_empty "${EMPTY_DIRS[@]}"
 
 # Lower-priority candidates (depends on workflow):
 # Geany, DBeaver, GitKraken, LACT, Solaar
+
+## -- CLEANUP -- ##
+
+
+## -- TESTING -- ##
+test -x /usr/lib/google-chrome-beta/google-chrome-beta || echo "chrome-binary missing"
+test -L /usr/bin/google-chrome-beta || echo "chrome symlink missing"
