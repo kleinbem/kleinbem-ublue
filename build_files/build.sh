@@ -8,11 +8,13 @@ EMPTY_DIRS=(/opt /srv /home /usr/local)
 check_empty() {
   local d rc=0
   for d in "$@"; do
-    if [[ -d $d && -z $(find "$d" -mindepth 1 -print -quit 2>/dev/null) ]]; then
+    if [[ ! -e $d ]]; then
+      echo "$d: does not exist (treated as empty)"
+    elif [[ -d $d && -z $(find "$d" -mindepth 1 -print -quit 2>/dev/null) ]]; then
       echo "$d: empty"
     else
       echo "$d: not empty"
-      tree "$d"
+      ls -A "$d" 2>/dev/null || true
       rc=1
     fi
   done
