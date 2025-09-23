@@ -44,6 +44,13 @@ packages_to_install=(
 # Install all defined packages from the enabled repositories
 dnf5 install -y ${packages_to_install[@]}
 
+# move ot to /user/lib and symlink to /usr/bin
+
+mv /opt/google/chrome-beta /usr/lib/google-chrome-beta && \
+    ln -sf /usr/lib/google-chrome-beta/google-chrome-beta /usr/bin/google-chrome-beta
+
+tree /opt
+
 ## -- TODO for your base image -- ##
 # The following are your notes on packages to consider moving into your
 # declarative build file for a truly custom base image.
