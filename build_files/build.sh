@@ -26,8 +26,9 @@ systemctl enable podman.socket
 
 ## -- REPOSITORY SETUP -- ##
 
-# Enable Google Chrome repository
+# Enable repositories for Google Chrome and Visual Studio Code
 sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/google-chrome.repo
+sed -i 's/enabled=0/enabled=1/' /etc/yum.repos.d/vscode.repo
 
 # Enable negativo17 multimedia repository and set its priority
 sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/negativo17-fedora-multimedia.repo
@@ -44,7 +45,11 @@ mkdir -p /var/opt/google/chrome-beta
 # Define lists of packages to install
 # This makes it easy to manage and see what's being added.
 base_packages=(
-  "google-chrome-beta"
+  "dnf5-plugins",
+  "google-chrome-beta",
+  "podman-desktop",
+  "code!",
+  "code-insiders"
 )
 
 utility_packages=(
@@ -57,6 +62,11 @@ packages_to_install=(
   ${utility_packages[@]}
 )
 
+dnf5 config-manager add-repo https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:podman-desktop/Fedora_$(rpm -E %fedora)/devel:kubic:libcontainers:stable:podman-desktop.repo
+
+
+dnf5 check-update
+
 # Install all defined packages from the enabled repositories
 dnf5 install -y ${packages_to_install[@]}
 
@@ -67,17 +77,6 @@ mv /opt/google/chrome-beta /usr/lib/google-chrome-beta && \
 
 
 check_empty "${EMPTY_DIRS[@]}"
-
-## -- TODO for your base image -- ##
-# The following are your notes on packages to consider moving into your
-# declarative build file for a truly custom base image.
-
-# High-priority candidates:
-# Podman Desktop, Cockpit Client, GNOME Builder, Arduino IDE,
-# Sysd Manager, DevToolbox, ... scrcpy
-
-# Lower-priority candidates (depends on workflow):
-# Geany, DBeaver, GitKraken, LACT, Solaar
 
 ## -- CLEANUP -- ##
 
