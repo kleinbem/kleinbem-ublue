@@ -69,8 +69,11 @@ dnf5 clean all
 dnf5 makecache
 dnf5 -y install "${packages_to_install[@]}"
 
-# move ot to /user/lib and symlink to /usr/bin 
-mv /opt/google/chrome-beta /usr/lib/google-chrome-beta && \ 
+# move Chrome Beta out of /opt into /usr/lib
+rm -rf /usr/lib/google-chrome-beta
+mv /opt/google/chrome-beta /usr/lib/google-chrome-beta
+
+# symlink to /usr/bin so it's in $PATH
 ln -sf /usr/lib/google-chrome-beta/google-chrome-beta /usr/bin/google-chrome-beta
 
 # --- TESTS ---
