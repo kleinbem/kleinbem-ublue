@@ -1,7 +1,6 @@
 #!/bin/bash
-
-# This script is designed to be idempotent and can be run safely multiple times.
-set -ouex pipefail
+set -euo pipefail
+set -x
 
 EMPTY_DIRS=(/opt /srv /home /usr/local)
 
@@ -19,72 +18,56 @@ check_empty() {
 
 check_empty "${EMPTY_DIRS[@]}"
 
-## -- SYSTEM CONFIGURATION -- ##
-
-# Enable podman socket for running rootless containers
+# --- SYSTEM CONFIG ---
 systemctl enable podman.socket || true
 
-## -- REPOSITORY SETUP -- ##
-
-# Enable repositories for Google Chrome and Visual Studio Code
+# --- REPOS ---
+# Chrome (Bluefin ships google-chrome.repo; there is NO google-chrome-beta.repo file)
 sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/google-chrome.repo || true
-sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/google-chrome-beta.repo || true
-sed -i 's/enabled=0/enabled=1/' /etc/yum.repos.d/vscode.repo || true
 
-# Enable negativo17 multimedia repository and set its priority
-sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/negativo17-fedora-multimedia.repo
-echo 'priority=90' | tee -a /etc/yum.repos.d/negativo17-fedora-multimedia.repo
+# VS Code repo (covers BOTH stable `code` and `code-insiders`)
+# If vscode.repo exists, enable it; otherwise drop official config.repo
+if [[ -f /etc/yum.repos.d/vscode.repo ]]; then
+  sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/vscode.repo || true
+else
+  curl -fsSL https://packages.microsoft.com/yumrepos/vscode/config.repo \
+    -o /etc/yum.repos.d/vscode.repo
+fi
 
-# Set priority for the built-in RPM Fusion repositories
-sed -i -e '$apriority=99' /etc/yum.repos.d/rpmfusion-*.repo
+# Negativo17 multimedia + priority
+if [[ -f /etc/yum.repos.d/negativo17-fedora-multimedia.repo ]]; then
+  sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/negativo17-fedora-multimedia.repo || true
+  grep -q '^priority=90$' /etc/yum.repos.d/negativo17-fedora-multimedia.repo || \
+    echo 'priority=90' >> /etc/yum.repos.d/negativo17-fedora-multimedia.repo
+fi
 
-cat >/etc/yum.repos.d/vscode-insiders.repo <<'EOF'
-[code-insiders]
-name=Visual Studio Code Insiders
-baseurl=https://packages.microsoft.com/yumrepos/vscode-insiders
-enabled=1
-gpgcheck=1
-gpgkey=https://packages.microsoft.com/keys/microsoft.asc
-EOF
+# RPM Fusion priorities (append only once)
+for f in /etc/yum.repos.d/rpmfusion-*.repo; do
+  [[ -f "$f" ]] || continue
+  grep -q '^priority=99$' "$f" || echo 'priority=99' >> "$f"
+done
 
-## -- PACKAGE INSTALLATION -- ##
-
-# Manually create the directory for Google Chrome before installation
-mkdir -p /var/opt/google/chrome-beta
-
-# Define lists of packages to install
-# This makes it easy to manage and see what's being added.
+# --- PACKAGES ---
+# Bash arrays: no commas, no stray quotes, no "code!" typo
 base_packages=(
-  "dnf5-plugins",
-  "google-chrome-beta",
-  "code!",
-  "code-insiders"
+  dnf5-plugins
+  google-chrome-beta
+  code
+  code-insiders
 )
 
 utility_packages=(
-  ""
+  # add extra tools here
 )
 
-# Combine all package lists into one
-packages_to_install=(
-  ${base_packages[@]}
-  ${utility_packages[@]}
-)
+packages_to_install=("${base_packages[@]}" "${utility_packages[@]}")
 
-dnf5 check-update
+dnf5 clean all
+dnf5 makecache
+dnf5 -y install "${packages_to_install[@]}"
 
-# Install all defined packages from the enabled repositories
-dnf5 install -y ${packages_to_install[@]}
-
-# move ot to /user/lib and symlink to /usr/bin
-mv /opt/google/chrome-beta /usr/lib/google-chrome-beta && \
-    ln -sf /usr/lib/google-chrome-beta/google-chrome-beta /usr/bin/google-chrome-beta
-
+# --- TESTS ---
 check_empty "${EMPTY_DIRS[@]}"
-
-## -- CLEANUP -- ##
-
-
-## -- TESTING -- ##
-test -x /usr/lib/google-chrome-beta/google-chrome-beta || echo "chrome-binary missing"
-test -L /usr/bin/google-chrome-beta || echo "chrome symlink missing"
+command -v google-chrome-beta >/dev/null || echo "chrome-binary missing"
+command -v code >/dev/null || echo "code missing"
+command -v code-insiders >/dev/null || echo "code-insiders missing"
