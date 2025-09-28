@@ -47,6 +47,9 @@ for f in /etc/yum.repos.d/rpmfusion-*.repo; do
   grep -q '^priority=99$' "$f" || echo 'priority=99' >> "$f"
 done
 
+# Manually create the directory for Google Chrome before installation 
+mkdir -p /var/opt/google/chrome-beta
+
 # --- PACKAGES ---
 # Bash arrays: no commas, no stray quotes, no "code!" typo
 base_packages=(
@@ -65,6 +68,10 @@ packages_to_install=("${base_packages[@]}" "${utility_packages[@]}")
 dnf5 clean all
 dnf5 makecache
 dnf5 -y install "${packages_to_install[@]}"
+
+# move ot to /user/lib and symlink to /usr/bin 
+mv /opt/google/chrome-beta /usr/lib/google-chrome-beta && \ 
+ln -sf /usr/lib/google-chrome-beta/google-chrome-beta /usr/bin/google-chrome-beta
 
 # --- TESTS ---
 check_empty "${EMPTY_DIRS[@]}"
