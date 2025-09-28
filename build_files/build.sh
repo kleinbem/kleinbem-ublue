@@ -38,12 +38,6 @@ echo 'priority=90' | tee -a /etc/yum.repos.d/negativo17-fedora-multimedia.repo
 # Set priority for the built-in RPM Fusion repositories
 sed -i -e '$apriority=99' /etc/yum.repos.d/rpmfusion-*.repo
 
-# --- Add Podman Desktop repo (no config-manager) ---
-FEDVER="$(rpm -E %fedora)"
-curl -fsSL \
-  "https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:podman-desktop/Fedora_${FEDVER}/devel:kubic:libcontainers:stable:podman-desktop.repo" \
-  -o /etc/yum.repos.d/podman-desktop.repo
-
 cat >/etc/yum.repos.d/vscode-insiders.repo <<'EOF'
 [code-insiders]
 name=Visual Studio Code Insiders
@@ -63,7 +57,6 @@ mkdir -p /var/opt/google/chrome-beta
 base_packages=(
   "dnf5-plugins",
   "google-chrome-beta",
-  "podman-desktop",
   "code!",
   "code-insiders"
 )
@@ -78,19 +71,14 @@ packages_to_install=(
   ${utility_packages[@]}
 )
 
-dnf5 config-manager addrepo \
-  "https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:podman-desktop/Fedora_$(rpm -E %fedora)/devel:kubic:libcontainers:stable:podman-desktop.repo"
-
 dnf5 check-update
 
 # Install all defined packages from the enabled repositories
 dnf5 install -y ${packages_to_install[@]}
 
 # move ot to /user/lib and symlink to /usr/bin
-
 mv /opt/google/chrome-beta /usr/lib/google-chrome-beta && \
     ln -sf /usr/lib/google-chrome-beta/google-chrome-beta /usr/bin/google-chrome-beta
-
 
 check_empty "${EMPTY_DIRS[@]}"
 
