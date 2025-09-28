@@ -28,6 +28,7 @@ systemctl enable podman.socket
 
 # Enable repositories for Google Chrome and Visual Studio Code
 sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/google-chrome.repo
+sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/google-chrome.repo
 sed -i 's/enabled=0/enabled=1/' /etc/yum.repos.d/vscode.repo
 
 # Enable negativo17 multimedia repository and set its priority
@@ -36,6 +37,15 @@ echo 'priority=90' | tee -a /etc/yum.repos.d/negativo17-fedora-multimedia.repo
 
 # Set priority for the built-in RPM Fusion repositories
 sed -i -e '$apriority=99' /etc/yum.repos.d/rpmfusion-*.repo
+
+sudo tee /etc/yum.repos.d/vscode-insiders.repo > /dev/null <<'EOF'
+[code-insiders]
+name=Visual Studio Code Insiders
+baseurl=https://packages.microsoft.com/yumrepos/vscode-insiders
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.microsoft.com/keys/microsoft.asc
+EOF
 
 ## -- PACKAGE INSTALLATION -- ##
 
@@ -62,8 +72,8 @@ packages_to_install=(
   ${utility_packages[@]}
 )
 
-dnf5 config-manager add-repo https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:podman-desktop/Fedora_$(rpm -E %fedora)/devel:kubic:libcontainers:stable:podman-desktop.repo
-
+dnf5 config-manager addrepo \
+  "https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:podman-desktop/Fedora_$(rpm -E %fedora)/devel:kubic:libcontainers:stable:podman-desktop.repo"
 
 dnf5 check-update
 
