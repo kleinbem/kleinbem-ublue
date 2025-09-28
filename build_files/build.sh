@@ -22,14 +22,14 @@ check_empty "${EMPTY_DIRS[@]}"
 ## -- SYSTEM CONFIGURATION -- ##
 
 # Enable podman socket for running rootless containers
-systemctl enable podman.socket
+systemctl enable podman.socket || true
 
 ## -- REPOSITORY SETUP -- ##
 
 # Enable repositories for Google Chrome and Visual Studio Code
-sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/google-chrome.repo
-sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/google-chrome.repo
-sed -i 's/enabled=0/enabled=1/' /etc/yum.repos.d/vscode.repo
+sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/google-chrome.repo || true
+sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/google-chrome-beta.repo || true
+sed -i 's/enabled=0/enabled=1/' /etc/yum.repos.d/vscode.repo || true
 
 # Enable negativo17 multimedia repository and set its priority
 sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/negativo17-fedora-multimedia.repo
@@ -38,7 +38,13 @@ echo 'priority=90' | tee -a /etc/yum.repos.d/negativo17-fedora-multimedia.repo
 # Set priority for the built-in RPM Fusion repositories
 sed -i -e '$apriority=99' /etc/yum.repos.d/rpmfusion-*.repo
 
-sudo tee /etc/yum.repos.d/vscode-insiders.repo > /dev/null <<'EOF'
+# --- Add Podman Desktop repo (no config-manager) ---
+FEDVER="$(rpm -E %fedora)"
+curl -fsSL \
+  "https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:podman-desktop/Fedora_${FEDVER}/devel:kubic:libcontainers:stable:podman-desktop.repo" \
+  -o /etc/yum.repos.d/podman-desktop.repo
+
+cat >/etc/yum.repos.d/vscode-insiders.repo <<'EOF'
 [code-insiders]
 name=Visual Studio Code Insiders
 baseurl=https://packages.microsoft.com/yumrepos/vscode-insiders
