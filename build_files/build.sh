@@ -56,17 +56,24 @@ echo "Fetching the latest NoMachine URL..."
 BASE_URL="https://www.nomachine.com"
 DOWNLOAD_PAGE_URL="${BASE_URL}/download/linux"
 
-# This command finds the relative path to the RPM and builds the full URL
-# It uses grep with a Perl-compatible regex (-P) to extract just the link
-# The script will fail here if the URL can't be found (due to `set -o pipefail`)
-LATEST_PATH=$(curl -sL "${DOWNLOAD_PAGE_URL}" | grep -oP 'href="\K[^"]*x86_64\.rpm' | head -n 1)
-NOMACHINE_URL="${BASE_URL}${LATEST_PATH}"
+# This command now looks for 'href=' OR 'data-href=' to be more robust.
+# The (data-)? part of the regex makes the 'data-' prefix optional.
+LATEST_PATH=$(curl -sL "${DOWNLOAD_PAGE_URL}" | grep -oP '(data-)?href="\K[^"]*x86_64\.rpm' | head -n 1)
 
+# NEW: Add a check to ensure the URL was actually found.
+if [[ -z "${LATEST_PATH}" ]]; then
+  echo "Error: Could not automatically find the NoMachine download URL." >&2
+  echo "The website structure has likely changed. Please check the download page manually." >&2
+  exit 1
+fi
+
+NOMACHINE_URL="${BASE_URL}${LATEST_PATH}"
 echo "Latest NoMachine URL is: ${NOMACHINE_URL}"
 
 # Download the NoMachine RPM to a temporary location
 NOMACHINE_RPM="/tmp/$(basename "${NOMACHINE_URL}")"
 curl -fL "${NOMACHINE_URL}" -o "${NOMACHINE_RPM}"
+
 
 # --- PACKAGES ---
 # Bash arrays: no commas, no stray quotes, no "code!" typo
