@@ -47,8 +47,26 @@ for f in /etc/yum.repos.d/rpmfusion-*.repo; do
   grep -q '^priority=99$' "$f" || echo 'priority=99' >> "$f"
 done
 
-# Manually create the directory for Google Chrome before installation 
+# Manually create the directory for Google Chrome before installation
 mkdir -p /var/opt/google/chrome-beta
+
+# --- DOWNLOADS ---
+# Scrape the NoMachine website to find the URL for the latest 64-bit RPM
+echo "Fetching the latest NoMachine URL..."
+BASE_URL="https://www.nomachine.com"
+DOWNLOAD_PAGE_URL="${BASE_URL}/download/linux"
+
+# This command finds the relative path to the RPM and builds the full URL
+# It uses grep with a Perl-compatible regex (-P) to extract just the link
+# The script will fail here if the URL can't be found (due to `set -o pipefail`)
+LATEST_PATH=$(curl -sL "${DOWNLOAD_PAGE_URL}" | grep -oP 'href="\K[^"]*x86_64\.rpm' | head -n 1)
+NOMACHINE_URL="${BASE_URL}${LATEST_PATH}"
+
+echo "Latest NoMachine URL is: ${NOMACHINE_URL}"
+
+# Download the NoMachine RPM to a temporary location
+NOMACHINE_RPM="/tmp/$(basename "${NOMACHINE_URL}")"
+curl -fL "${NOMACHINE_URL}" -o "${NOMACHINE_RPM}"
 
 # --- PACKAGES ---
 # Bash arrays: no commas, no stray quotes, no "code!" typo
@@ -57,17 +75,23 @@ base_packages=(
   google-chrome-beta
   code
   code-insiders
+  xpra
 )
 
 utility_packages=(
   # add extra tools here
 )
 
-packages_to_install=("${base_packages[@]}" "${utility_packages[@]}")
+# Add the downloaded NoMachine RPM to the list of packages to install
+packages_to_install=("${base_packages[@]}" "${utility_packages[@]}" "${NOMACHINE_RPM}")
 
 dnf5 clean all
 dnf5 makecache
 dnf5 -y install "${packages_to_install[@]}"
+
+# --- CLEANUP ---
+# Remove the downloaded NoMachine RPM after installation
+rm -f "${NOMACHINE_RPM}"
 
 # move Chrome Beta out of /opt into /usr/lib
 rm -rf /usr/lib/google-chrome-beta
@@ -81,3 +105,4 @@ check_empty "${EMPTY_DIRS[@]}"
 command -v google-chrome-beta >/dev/null || echo "chrome-binary missing"
 command -v code >/dev/null || echo "code missing"
 command -v code-insiders >/dev/null || echo "code-insiders missing"
+test -f /usr/NX/bin/nxplayer || echo "nomachine (nxplayer) missing"
