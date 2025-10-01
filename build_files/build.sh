@@ -51,29 +51,41 @@ done
 mkdir -p /var/opt/google/chrome-beta
 
 # --- DOWNLOADS ---
-# Scrape the NoMachine website to find the URL for the latest 64-bit RPM
-echo "Fetching the latest NoMachine URL..."
-BASE_URL="https://www.nomachine.com"
-DOWNLOAD_PAGE_URL="${BASE_URL}/download/linux"
-
-# This command now looks for 'href=' OR 'data-href=' to be more robust.
-# The (data-)? part of the regex makes the 'data-' prefix optional.
-LATEST_PATH=$(curl -sL "${DOWNLOAD_PAGE_URL}" | grep -oP '(data-)?href="\K[^"]*x86_64\.rpm' | head -n 1)
-
-# NEW: Add a check to ensure the URL was actually found.
-if [[ -z "${LATEST_PATH}" ]]; then
-  echo "Error: Could not automatically find the NoMachine download URL." >&2
-  echo "The website structure has likely changed. Please check the download page manually." >&2
-  exit 1
-fi
-
-NOMACHINE_URL="${BASE_URL}${LATEST_PATH}"
-echo "Latest NoMachine URL is: ${NOMACHINE_URL}"
+echo "Resolving latest NoMachine RPM URL..."
+NOMACHINE_URL="$(
+python3 - <<'PY' || exit 1
+import re,requests,sys
+U="https://download.nomachine.com/download/?id=1&platform=linux"
+RX1=re.compile(r'https://web\d+\.nomachine\.com/download/\d+(?:\.\d+)*/Linux/nomachine_[\d._-]+_x86_64\.rpm')
+RX2=re.compile(r'class="path"\s+value="(https://[^"]*_x86_64\.rpm)"')
+s=requests.Session();s.headers.update({'User-Agent':'Mozilla/5.0','Referer':'https://www.nomachine.com/download'})
+for _ in range(3):
+    h=s.get(U,timeout=15,allow_redirects=True).text
+    L=RX1.findall(h) or RX2.findall(h)
+    if L:
+        print(sorted(set(L),key=lambda u:tuple(map(int,re.findall(r'\d+',u))))[-1])
+        sys.exit(0)
+sys.exit(1)
+PY
+)" || {
+  # Fallback with curl (cookie jar + UA), still extracting full URL
+  ck=/tmp/nx.cookies
+  NOMACHINE_URL="$(curl -fsSL -A 'Mozilla/5.0' --cookie-jar "$ck" --cookie "$ck" \
+      'https://download.nomachine.com/download/?id=1&platform=linux' \
+      | grep -Eo 'https://web[0-9]+\.nomachine\.com/download/[0-9.]+/Linux/nomachine_[0-9._-]+_x86_64\.rpm' \
+      | sort -u -V | tail -n1)" || true
+  # try <input class="path" ...>
+  [[ -z "${NOMACHINE_URL}" ]] && NOMACHINE_URL="$(curl -fsSL -A 'Mozilla/5.0' --cookie-jar "$ck" --cookie "$ck" \
+      'https://download.nomachine.com/download/?id=1&platform=linux' \
+      | sed -n 's/.*class="path" value="\([^"]*_x86_64\.rpm\)".*/\1/p' \
+      | sort -u -V | tail -n1)"
+}
+[[ -z "${NOMACHINE_URL}" ]] && { echo "Error: NoMachine URL not found"; exit 1; }
+echo "NoMachine URL: ${NOMACHINE_URL}"
 
 # Download the NoMachine RPM to a temporary location
 NOMACHINE_RPM="/tmp/$(basename "${NOMACHINE_URL}")"
-curl -fL "${NOMACHINE_URL}" -o "${NOMACHINE_RPM}"
-
+curl -fL --retry 3 -o "${NOMACHINE_RPM}" "${NOMACHINE_URL}"
 
 # --- PACKAGES ---
 # Bash arrays: no commas, no stray quotes, no "code!" typo
