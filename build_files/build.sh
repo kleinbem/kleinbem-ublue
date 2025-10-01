@@ -94,7 +94,7 @@ base_packages=(
   google-chrome-beta
   code
   code-insiders
-  xpra
+  waypipe
 )
 
 utility_packages=(
