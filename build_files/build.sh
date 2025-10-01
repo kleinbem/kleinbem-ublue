@@ -95,6 +95,7 @@ base_packages=(
   code
   code-insiders
   waypipe
+  ansible
 )
 
 utility_packages=(
@@ -125,3 +126,4 @@ command -v google-chrome-beta >/dev/null || echo "chrome-binary missing"
 command -v code >/dev/null || echo "code missing"
 command -v code-insiders >/dev/null || echo "code-insiders missing"
 test -f /usr/NX/bin/nxplayer || echo "nomachine (nxplayer) missing"
+command -v ansible >/dev/null || echo "ansible missing"
