@@ -95,7 +95,9 @@ base_packages=(
   code
   code-insiders
   waypipe
-  ansible
+  btop
+  htop
+  stress-ng
 )
 
 utility_packages=(
