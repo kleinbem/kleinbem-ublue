@@ -98,6 +98,8 @@ base_packages=(
   btop
   htop
   stress-ng
+  pesign
+  sbsigntools
 )
 
 utility_packages=(
