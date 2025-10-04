@@ -100,6 +100,7 @@ base_packages=(
   stress-ng
   pesign
   sbsigntools
+  waydroid
 )
 
 utility_packages=(
